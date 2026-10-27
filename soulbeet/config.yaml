@@ -22,7 +22,7 @@ map:
     read_only: false
 options:
   navidrome_url: ""
-  download_dir: /media/slskd/downloads
+  download_dir: /share/Media/slskd/downloads
   album_mode: false
   tz: ""
 schema:
