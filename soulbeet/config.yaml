@@ -13,8 +13,10 @@ ports:
   9765/tcp: 9765
 ports_description:
   9765/tcp: Soulbeet Web UI
-map:
+mmap:
   - type: media
+    read_only: false
+  - type: share
     read_only: false
   - type: addon_config
     read_only: false
