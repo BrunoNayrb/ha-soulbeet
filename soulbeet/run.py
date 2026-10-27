@@ -1,100 +1,89 @@
-#!/usr/bin/python3
+#!/bin/bash
+set -e
 
-import json
-import os
-import secrets
-import sys
-import urllib.request
+echo "[soulbeet] Starting HA add-on wrapper..."
 
-OPTIONS = "/data/options.json"
-SECRET_KEY_FILE = "/data/secret_key"
-SERVER = "/app/server/server"
+# Persistent data directory (local to HAOS)
+mkdir -p /data/beets_dbs
+chmod 755 /data /data/beets_dbs
 
+# Generate or load SECRET_KEY
+if [ ! -f /data/secret_key ]; then
+  echo "[soulbeet] Generating new SECRET_KEY..."
+  python3 -c "import secrets; print(secrets.token_urlsafe(48))" > /data/secret_key
+  chmod 600 /data/secret_key
+fi
+export SECRET_KEY=$(cat /data/secret_key)
 
-def log(message):
-    print(f"[soulbeet] {message}", flush=True)
+# Soulbeet application database (always local)
+export DATABASE_URL="sqlite:/data/soulbeet.db"
 
+# Parse options from HA
+CONFIG_PATH="/data/options.json"
+if [ -f "$CONFIG_PATH" ]; then
+  DOWNLOAD_PATH=$(jq -r '.download_path // "/share/Media/slskd/downloads"' "$CONFIG_PATH")
+  MUSIC_BASE=$(jq -r '.music_base // "/share/Media/Music"' "$CONFIG_PATH")
+  NAVIDROME_URL=$(jq -r '.navidrome_url // empty' "$CONFIG_PATH")
+else
+  DOWNLOAD_PATH="/share/Media/slskd/downloads"
+  MUSIC_BASE="/share/Media/Music"
+  NAVIDROME_URL=""
+fi
 
-def load_options():
-    try:
-        with open(OPTIONS) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
+export DOWNLOAD_PATH
+if [ -n "$NAVIDROME_URL" ]; then
+  export NAVIDROME_URL
+fi
 
+echo "[soulbeet] DOWNLOAD_PATH=${DOWNLOAD_PATH}"
+echo "[soulbeet] MUSIC_BASE=${MUSIC_BASE}"
+echo "[soulbeet] DATABASE_URL=${DATABASE_URL}"
 
-def persist_secret_key():
-    try:
-        with open(SECRET_KEY_FILE) as f:
-            key = f.read().strip()
-        if key:
-            return key
-    except FileNotFoundError:
-        pass
+# Ensure download directory is accessible
+if [ ! -d "$DOWNLOAD_PATH" ]; then
+  echo "[soulbeet] WARNING: Download path ${DOWNLOAD_PATH} does not exist or is not mounted."
+fi
 
-    key = secrets.token_hex(32)
-    with open(SECRET_KEY_FILE, "w") as f:
-        f.write(key)
+# Set up local beets databases via symlinks for all music libraries under MUSIC_BASE
+# This avoids SQLite locking problems on CIFS/NFS mounts.
+if [ -d "$MUSIC_BASE" ]; then
+  echo "[soulbeet] Setting up local beets databases for libraries under ${MUSIC_BASE}..."
+  for libdir in "$MUSIC_BASE"/*/; do
+    if [ -d "$libdir" ]; then
+      name=$(basename "$libdir")
+      # Skip if name is empty or starts with .
+      if [ -z "$name" ] || [[ "$name" == .* ]]; then
+        continue
+      fi
+      local_db="/data/beets_dbs/${name}.beets_library.db"
+      target_db="${libdir}.beets_library.db"
 
-    log("Generated persistent SECRET_KEY")
-    return key
+      # If a real (non-symlink) DB exists on the network share, move it locally
+      if [ -e "$target_db" ] && [ ! -L "$target_db" ]; then
+        echo "[soulbeet] Migrating existing DB for ${name} to local storage..."
+        mv "$target_db" "$local_db" || true
+      fi
 
+      # Create/update the symlink
+      ln -sfn "$local_db" "$target_db"
+      echo "[soulbeet] Linked ${target_db} -> ${local_db}"
+    fi
+  done
+else
+  echo "[soulbeet] WARNING: Music base ${MUSIC_BASE} not found. Add libraries later and restart the add-on to create DB symlinks."
+fi
 
-def log_slskd_hint():
-    token = os.environ.get("SUPERVISOR_TOKEN")
-    if not token:
-        return
-
-    try:
-        req = urllib.request.Request(
-            "http://supervisor/addons/self/info",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        with urllib.request.urlopen(req, timeout=5) as response:
-            slug = json.load(response).get("data", {}).get("slug", "")
-
-        if slug:
-            prefix = slug.rsplit("_", 1)[0]
-            host = f"{prefix}_slskd".replace("_", "-")
-            log(f"Suggested slskd URL: http://{host}:5030")
-    except Exception as exc:
-        log(f"Could not determine slskd address: {exc}")
-
-
-def main():
-    opts = load_options()
-
-    navidrome_url = (opts.get("navidrome_url") or "").strip()
-    if navidrome_url:
-        os.environ["NAVIDROME_URL"] = navidrome_url
-    else:
-        os.environ.pop("NAVIDROME_URL", None)
-
-    download_dir = (
-        opts.get("download_dir") or "/media/slskd/downloads"
-    ).strip()
-    os.environ["DOWNLOAD_PATH"] = download_dir
-    os.environ["SECRET_KEY"] = persist_secret_key()
-
-    os.makedirs("/data/beets-plugins", exist_ok=True)
-
-    if opts.get("album_mode"):
-        os.environ["BEETS_ALBUM_MODE"] = "true"
-
-    tz = (opts.get("tz") or "").strip()
-    if tz:
-        os.environ["TZ"] = tz
-
-    beets_config = "/config/beets_config.yaml"
-    if os.path.isfile(beets_config):
-        os.environ["BEETS_CONFIG"] = beets_config
-        log(f"Using custom Beets config: {beets_config}")
-
-    log(f"Downloads: {download_dir}")
-    log_slskd_hint()
-
-    os.execv(SERVER, [SERVER])
-
-
-if __name__ == "__main__":
-    main()
+echo "[soulbeet] Launching Soulbeet..."
+# The official image places the server binary at /app/server/server
+# (Dioxus fullstack release layout). Fall back if needed.
+if [ -x /app/server/server ]; then
+  exec /app/server/server
+elif [ -x /app/server/web ]; then
+  exec /app/server/web
+elif [ -x /app/server ]; then
+  exec /app/server
+else
+  echo "[soulbeet] ERROR: Could not find Soulbeet server binary."
+  ls -la /app/server || true
+  exit 1
+fi
