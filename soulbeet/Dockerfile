@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Soulbeet application and beets environment from the official image
-COPY --from=docccccc/soulbeet:latest /app /app
-COPY --from=docccccc/soulbeet:latest /opt/venv /opt/venv
-COPY --from=docccccc/soulbeet:latest /opt/beets-plugins /opt/beets-plugins
+COPY --from=docccccc/soulbeet:full /app /app
+COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
+COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
 
 # Environment matching the official image
 ENV PATH="/opt/venv/bin:/usr/local/bin:$PATH"
