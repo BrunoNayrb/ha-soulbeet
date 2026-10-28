@@ -20,6 +20,7 @@ ENV DATABASE_URL="sqlite:/data/soulbeet.db"
 ENV PORT=9765
 ENV IP=0.0.0.0
 ENV HOME=/tmp
+ENV BEETS_PYTHON=/opt/venv/bin/python
 
 WORKDIR /app
 
