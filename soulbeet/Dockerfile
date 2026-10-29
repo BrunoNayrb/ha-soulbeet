@@ -57,38 +57,31 @@ export DOWNLOAD_PATH
 echo "[soulbeet] DOWNLOAD_PATH=${DOWNLOAD_PATH}"
 echo "[soulbeet] MUSIC_BASE=${MUSIC_BASE}"
 
-# Install beet wrapper that forces library DBs onto local storage
-REAL_BEET="/opt/venv/bin/beet.real"
-WRAPPER="/opt/venv/bin/beet"
+# Create a Python wrapper that rewrites library DB paths
+PYTHON_REAL="/opt/venv/bin/python"
+PYTHON_WRAPPER="/opt/venv/bin/python-wrapper"
 
-echo "[soulbeet] Installing beet wrapper..." >&2
-
-# Always move the original out of the way if it exists and is not already our wrapper
-if [ -x /opt/venv/bin/beet ] && [ ! -f "$REAL_BEET" ]; then
-  mv /opt/venv/bin/beet "$REAL_BEET"
-  echo "[soulbeet] Moved original beet to beet.real" >&2
-fi
-
-# Write the wrapper (overwrite if present)
-cat > "$WRAPPER" << 'INNER'
+cat > "$PYTHON_WRAPPER" << 'PYWRAP'
 #!/bin/bash
-echo "[beet-wrapper] Called with: $*" >&2
+echo "[python-wrapper] Called with: $*" >&2
 args=()
 for arg in "$@"; do
   if [[ "$arg" == *".beets_library.db" ]]; then
     parent=$(dirname "$arg")
     safe=$(echo "$parent" | sed 's|/|_|g' | sed 's|^_||' | sed 's|[^a-zA-Z0-9._-]|_|g')
     local_db="/data/beets_dbs/${safe}.beets_library.db"
-    echo "[beet-wrapper] Redirecting library DB: $arg -> $local_db" >&2
+    echo "[python-wrapper] Redirecting library DB: $arg -> $local_db" >&2
     args+=("$local_db")
   else
     args+=("$arg")
   fi
 done
-exec /opt/venv/bin/python /opt/venv/bin/beet.real "${args[@]}"
-INNER
-chmod 755 "$WRAPPER"
-echo "[soulbeet] Beet wrapper installed at $WRAPPER" >&2
+exec /opt/venv/bin/python "${args[@]}"
+PYWRAP
+chmod 755 "$PYTHON_WRAPPER"
+
+export BEETS_PYTHON="$PYTHON_WRAPPER"
+echo "[soulbeet] BEETS_PYTHON set to wrapper: $BEETS_PYTHON" >&2
 
 echo "[soulbeet] Launching Soulbeet..."
 if [ -x /app/server/server ]; then
