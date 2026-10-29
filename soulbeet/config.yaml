@@ -1,5 +1,5 @@
 name: Soulbeet
-version: "0.7.1-localdb1"
+version: "0.7.1-localdb2"
 slug: soulbeet
 description: >-
   Automated music downloader and library manager integrating slskd (Soulseek) and beets.
