@@ -26,8 +26,8 @@ In the add-on Configuration tab you can set:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `download_path` | `/share/Media/slskd/downloads` | Folder where slskd saves downloads |
-| `music_base` | `/share/Media/Music` | Base path for your music libraries |
+| `download_path` | `/share/Media/slskd/downloads` | Folder where slskd saves downloads (configurable) |
+| `music_base` | `/share/Media/Music` | Base path for your music libraries (change in SoulBeets Settings) |
 | `navidrome_url` | *(empty)* | Optional Navidrome URL for rating sync and playlists |
 
 After starting, open the Soulbeet UI and:
