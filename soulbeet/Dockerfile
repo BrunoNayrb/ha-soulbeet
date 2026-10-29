@@ -66,27 +66,22 @@ fi
 
 cat > "$WRAPPER" << 'INNER'
 #!/bin/bash
+# Debug: log the raw command line
+echo "[beet-wrapper] Called with: $*" >&2
+
 args=()
-next_is_lib=0
 for arg in "$@"; do
-  if [ "$next_is_lib" = 1 ]; then
-    if [[ "$arg" == *".beets_library.db" ]]; then
-      parent=$(dirname "$arg")
-      safe=$(echo "$parent" | sed 's|/|_|g' | sed 's|^_||' | sed 's|[^a-zA-Z0-9._-]|_|g')
-      local_db="/data/beets_dbs/${safe}.beets_library.db"
-      echo "[beet-wrapper] Redirecting library DB: $arg -> $local_db" >&2
-      args+=("$local_db")
-    else
-      args+=("$arg")
-    fi
-    next_is_lib=0
-  elif [ "$arg" = "-l" ]; then
-    args+=("-l")
-    next_is_lib=1
+  if [[ "$arg" == *".beets_library.db" ]]; then
+    parent=$(dirname "$arg")
+    safe=$(echo "$parent" | sed 's|/|_|g' | sed 's|^_||' | sed 's|[^a-zA-Z0-9._-]|_|g')
+    local_db="/data/beets_dbs/${safe}.beets_library.db"
+    echo "[beet-wrapper] Redirecting library DB: $arg -> $local_db" >&2
+    args+=("$local_db")
   else
     args+=("$arg")
   fi
 done
+
 # Explicit Python so a broken shebang cannot fail
 exec /opt/venv/bin/python /opt/venv/bin/beet.real "${args[@]}"
 INNER
