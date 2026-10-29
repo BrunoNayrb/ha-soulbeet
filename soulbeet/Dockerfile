@@ -60,15 +60,19 @@ echo "[soulbeet] MUSIC_BASE=${MUSIC_BASE}"
 # Install beet wrapper that forces library DBs onto local storage
 REAL_BEET="/opt/venv/bin/beet.real"
 WRAPPER="/opt/venv/bin/beet"
-if [ ! -f "$REAL_BEET" ] && [ -x /opt/venv/bin/beet ]; then
+
+echo "[soulbeet] Installing beet wrapper..." >&2
+
+# Always move the original out of the way if it exists and is not already our wrapper
+if [ -x /opt/venv/bin/beet ] && [ ! -f "$REAL_BEET" ]; then
   mv /opt/venv/bin/beet "$REAL_BEET"
+  echo "[soulbeet] Moved original beet to beet.real" >&2
 fi
 
+# Write the wrapper (overwrite if present)
 cat > "$WRAPPER" << 'INNER'
 #!/bin/bash
-# Debug: log the raw command line
 echo "[beet-wrapper] Called with: $*" >&2
-
 args=()
 for arg in "$@"; do
   if [[ "$arg" == *".beets_library.db" ]]; then
@@ -81,12 +85,10 @@ for arg in "$@"; do
     args+=("$arg")
   fi
 done
-
-# Explicit Python so a broken shebang cannot fail
 exec /opt/venv/bin/python /opt/venv/bin/beet.real "${args[@]}"
 INNER
 chmod 755 "$WRAPPER"
-echo "[soulbeet] Beet wrapper installed (local DBs under /data/beets_dbs)"
+echo "[soulbeet] Beet wrapper installed at $WRAPPER" >&2
 
 echo "[soulbeet] Launching Soulbeet..."
 if [ -x /app/server/server ]; then
