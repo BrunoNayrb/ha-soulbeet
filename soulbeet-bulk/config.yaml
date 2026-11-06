@@ -1,0 +1,18 @@
+name: Soulbeet Bulk Test
+version: "0.1.0"
+slug: soulbeet_bulk
+description: Test build of Soulbeet with bulk CSV import
+arch:
+  - amd64
+  - aarch64
+init: false
+ports:
+  9765/tcp: 9766
+map:
+  - share:rw
+options:
+  download_path: /share/Media/slskd/downloads
+  music_base: /share/Media/Music
+schema:
+  download_path: str
+  music_base: str
