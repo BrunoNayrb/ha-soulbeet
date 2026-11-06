@@ -1,30 +1,21 @@
-# Build Soulbeet from the fork
-FROM rust:latest AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git /src
-WORKDIR /src
-RUN cargo build --release --features server
-
-# Runtime (based on your working add-on)
-FROM python:3.11-slim-bookworm
+FROM rust:1.99-bookworm AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    jq \
-    ca-certificates \
-    ffmpeg \
+    git pkg-config libssl-dev curl \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy beets environment from the official image
-COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
-COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
+RUN cargo install dioxus-cli@0.7.4 --locked
 
-# Copy the binary we just built
-# See what binaries were built
-RUN find /src/target/release -type f -executable -not -name "*.d" -not -name "*.rlib" -ls || true
-RUN ls -la /src/target/release/ || true
+WORKDIR /src
+RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git .
+RUN npm install
+RUN npx @tailwindcss/cli -i ./web/assets/input.css -o ./web/assets/tailwind.css
+RUN dx bundle --package web --release
 
-# Adjust this line once we know the real binary name
-# COPY --from=builder /src/target/release/SOMETHING /app/server
+# The binary is usually at target/dx/web/release/web/web
+# or target/release/web — we'll confirm with a find
+RUN find /src -name "web" -type f -executable || true
 
 ENV PATH="/opt/venv/bin:/usr/local/bin:$PATH"
 ENV PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
