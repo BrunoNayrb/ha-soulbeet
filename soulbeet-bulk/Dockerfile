@@ -12,6 +12,9 @@ WORKDIR /src
 RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git .
 RUN npm install
 RUN npx @tailwindcss/cli -i ./web/assets/input.css -o ./web/assets/tailwind.css
+
+# Force a clean bundle so Docker doesn't reuse a bad cache
+RUN rm -rf /src/target
 RUN dx bundle --package web --release
 
 # Runtime
@@ -83,7 +86,17 @@ PYWRAP
 chmod 755 "$PYTHON_WRAPPER"
 export BEETS_PYTHON="$PYTHON_WRAPPER"
 echo "[soulbeet] Launching Soulbeet..."
-exec /app/server/web
+
+# Try the most likely binary names inside the bundle directory
+if [ -x /app/server/web ]; then
+  exec /app/server/web
+elif [ -x /app/server/server ]; then
+  exec /app/server/server
+else
+  echo "[soulbeet] ERROR: binary not found in /app/server"
+  ls -la /app/server || true
+  exit 1
+fi
 EOF
 RUN chmod a+x /run.sh
 
