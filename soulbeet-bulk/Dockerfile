@@ -65,6 +65,9 @@ else
 fi
 export DOWNLOAD_PATH
 [ -n "$NAVIDROME_URL" ] && export NAVIDROME_URL
+echo "[soulbeet] DOWNLOAD_PATH=${DOWNLOAD_PATH}"
+echo "[soulbeet] MUSIC_BASE=${MUSIC_BASE}"
+echo "[soulbeet] NAVIDROME_URL=${NAVIDROME_URL:-not set}"
 
 PYTHON_WRAPPER="/opt/venv/bin/python-wrapper"
 cat > "$PYTHON_WRAPPER" << 'PYWRAP'
