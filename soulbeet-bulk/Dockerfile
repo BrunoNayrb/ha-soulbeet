@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git /src
 WORKDIR /src
-RUN cargo build --release -p api --features server
+RUN cargo build --release --features server
 
 # Runtime (based on your working add-on)
 FROM python:3.11-slim-bookworm
@@ -19,6 +19,8 @@ COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
 COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
 
 # Copy the binary we just built
+# Temporary: list what was built so we can see the binary name
+RUN find /src/target/release -type f -executable -not -name "*.d" -not -name "*.rlib" || true
 COPY --from=builder /src/target/release/api /app/server
 
 ENV PATH="/opt/venv/bin:/usr/local/bin:$PATH"
