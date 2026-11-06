@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Beets environment from official image
 COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
 COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
+COPY --from=docccccc/soulbeet:full /app/beets_config.yaml /app/beets_config.yaml
 
 # Binary + assets from the dx bundle
 COPY --from=builder /src/target/dx/web/release/web /app/server
