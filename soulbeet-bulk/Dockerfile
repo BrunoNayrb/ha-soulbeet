@@ -1,5 +1,5 @@
 # Build Soulbeet from the fork
-FROM rust:1.99-bookworm AS builder
+FROM rust:latest AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git /src
