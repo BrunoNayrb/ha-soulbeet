@@ -19,9 +19,12 @@ COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
 COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
 
 # Copy the binary we just built
-# Temporary: list what was built so we can see the binary name
-RUN find /src/target/release -type f -executable -not -name "*.d" -not -name "*.rlib" || true
-COPY --from=builder /src/target/release/api /app/server
+# See what binaries were built
+RUN find /src/target/release -type f -executable -not -name "*.d" -not -name "*.rlib" -ls || true
+RUN ls -la /src/target/release/ || true
+
+# Adjust this line once we know the real binary name
+# COPY --from=builder /src/target/release/SOMETHING /app/server
 
 ENV PATH="/opt/venv/bin:/usr/local/bin:$PATH"
 ENV PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
