@@ -1,5 +1,5 @@
 name: Soulbeet Bulk Test
-version: "0.1.1"
+version: "0.1.2"
 slug: soulbeet_bulk
 description: Test build of Soulbeet with bulk CSV import
 arch:
