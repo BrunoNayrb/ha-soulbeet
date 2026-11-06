@@ -1,3 +1,4 @@
+# Build from your fork using the official method
 FROM rust:1.99-bookworm AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git pkg-config libssl-dev curl \
@@ -13,9 +14,18 @@ RUN npm install
 RUN npx @tailwindcss/cli -i ./web/assets/input.css -o ./web/assets/tailwind.css
 RUN dx bundle --package web --release
 
-# The binary is usually at target/dx/web/release/web/web
-# or target/release/web — we'll confirm with a find
-RUN find /src -name "web" -type f -executable || true
+# Runtime
+FROM python:3.11-slim-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    jq ca-certificates ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Beets environment from official image
+COPY --from=docccccc/soulbeet:full /opt/venv /opt/venv
+COPY --from=docccccc/soulbeet:full /opt/beets-plugins /opt/beets-plugins
+
+# Binary + assets from the dx bundle
+COPY --from=builder /src/target/dx/web/release/web /app/server
 
 ENV PATH="/opt/venv/bin:/usr/local/bin:$PATH"
 ENV PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
@@ -26,7 +36,7 @@ ENV HOME=/tmp
 ENV BEETS_PYTHON=/opt/venv/bin/python
 WORKDIR /app
 
-# Startup script with the DB redirect wrapper
+# Startup script with DB redirect wrapper
 RUN cat > /run.sh << 'EOF'
 #!/bin/bash
 set -e
@@ -34,7 +44,6 @@ echo "[soulbeet] Starting HA add-on wrapper..."
 mkdir -p /data/beets_dbs
 chmod 755 /data /data/beets_dbs
 if [ ! -f /data/secret_key ]; then
-  echo "[soulbeet] Generating new SECRET_KEY..."
   python3 -c "import secrets; print(secrets.token_urlsafe(48))" > /data/secret_key
   chmod 600 /data/secret_key
 fi
@@ -52,10 +61,7 @@ else
 fi
 export DOWNLOAD_PATH
 [ -n "$NAVIDROME_URL" ] && export NAVIDROME_URL
-echo "[soulbeet] DOWNLOAD_PATH=${DOWNLOAD_PATH}"
-echo "[soulbeet] MUSIC_BASE=${MUSIC_BASE}"
 
-# Python wrapper that redirects library DB paths
 PYTHON_WRAPPER="/opt/venv/bin/python-wrapper"
 cat > "$PYTHON_WRAPPER" << 'PYWRAP'
 #!/bin/bash
@@ -76,9 +82,8 @@ exec /opt/venv/bin/python "${args[@]}"
 PYWRAP
 chmod 755 "$PYTHON_WRAPPER"
 export BEETS_PYTHON="$PYTHON_WRAPPER"
-echo "[soulbeet] BEETS_PYTHON set to wrapper: $BEETS_PYTHON" >&2
 echo "[soulbeet] Launching Soulbeet..."
-exec /app/server
+exec /app/server/web
 EOF
 RUN chmod a+x /run.sh
 
