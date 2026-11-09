@@ -1,6 +1,6 @@
 # Build from your fork using the official method
 FROM rust:1.99-bookworm AS builder
-ARG CACHEBUST=2
+ARG CACHEBUST=3
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git pkg-config libssl-dev curl \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN cargo install dioxus-cli@0.7.4 --locked
 
 WORKDIR /src
-RUN git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git .
+RUN echo "cachebust=${CACHEBUST}" && git clone --depth 1 https://github.com/BrunoNayrb/soulbeet.git .
 RUN npm install
 RUN npx @tailwindcss/cli -i ./web/assets/input.css -o ./web/assets/tailwind.css
 
