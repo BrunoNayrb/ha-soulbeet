@@ -1,6 +1,6 @@
 # Build from your fork using the official method
 FROM rust:1.99-bookworm AS builder
-ARG CACHEBUST=6
+ARG CACHEBUST=7
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git pkg-config libssl-dev curl \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
