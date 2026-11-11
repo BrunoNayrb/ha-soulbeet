@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "soulbeet-bulk/**"
+      - ".github/workflows/build.yaml"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "version=$(grep '^version:' soulbeet-bulk/config.yaml | awk '{print $2}' | tr -d '\"')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: soulbeet-bulk
+          push: true
+          platforms: linux/amd64
+          provenance: false
+          sbom: false
+          tags: ghcr.io/brunonayrb/soulbeet-bulk:${{ steps.version.outputs.version }}
+          build-args: |
+            CACHEBUST=${{ github.sha }}
+            BUILD_VERSION=${{ steps.version.outputs.version }}
+            BUILD_ARCH=amd64
