@@ -1,10 +1,10 @@
 name: Soulbeet Bulk Test
-version: 0.1.21
+version: 0.1.22
 slug: soulbeet_bulk_v2
 description: Test build of Soulbeet with bulk CSV import
+image: ghcr.io/brunonayrb/soulbeet-bulk
 arch:
   - amd64
-  - aarch64
 ports:
   9765/tcp: 9766
 map:
