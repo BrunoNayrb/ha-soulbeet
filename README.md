@@ -38,12 +38,3 @@ The image is built on GitHub and published to `ghcr.io/brunonayrb/soulbeet-bulk`
 | `navidrome_url` | Your Navidrome address, or leave it empty |
 
 Then start the add-on, open the web UI, and add each library folder there. Bulk import can only send music to a folder that has been added.
-
-## Updating Soulbeet Bulk
-
-1. Push the code changes to the soulbeet fork.
-2. Raise `version` in `soulbeet-bulk/config.yaml` and commit it.
-3. Wait until the GitHub Action is green.
-4. Reload the repository in Home Assistant and press **Update**.
-
-Settings, the import history, and the beets databases stay in place.
