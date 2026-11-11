@@ -1,7 +1,11 @@
 name: Soulbeet Bulk
 version: 0.1.22
 slug: soulbeet_bulk_v2
-description: Test build of Soulbeet with bulk CSV import
+description: >-
+  Fork of Soulbeet that imports a CSV of songs, searches album versions
+  first, skips live recordings, and queues the downloads. Failed rows
+  can be opened in album search. Beets databases stay on local storage
+  so imports do not lock on a network share.
 image: ghcr.io/brunonayrb/soulbeet-bulk
 arch:
   - amd64
