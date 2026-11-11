@@ -1,52 +1,47 @@
 # Soulbeet Home Assistant add-ons
 
-Two Home Assistant add-ons for [Soulbeet](https://github.com/BrunoNayrb/soulbeet), a Soulseek downloader and library manager that uses slskd and beets.
+Two Home Assistant add-ons for a fork of Soulbeet, a Soulseek downloader and library manager that uses slskd and beets.
+
+This fork and these add-on files were written with AI assistance (xAI Grok) and checked by hand. It is a personal project. Expect rough edges, and read the code before you rely on it.
 
 | Add-on | What it is | Web UI |
 |--------|------------|--------|
 | Soulbeet | Official Soulbeet app with the local database fix | Port 9765 |
-| Soulbeet Bulk | Custom fork with CSV import | Port 9766 |
+| Soulbeet Bulk | This fork, including CSV import | Port 9766 |
 
-Both can be installed together. Music stays on the network share. The beets library databases are stored on the Home Assistant disk so imports do not fail with "database is locked".
+Both can be installed together. Music stays wherever you mount it. The beets library databases are stored on the Home Assistant disk so imports do not fail with "database is locked".
 
 ## Soulbeet Bulk
 
-Built from the [BrunoNayrb/soulbeet](https://github.com/BrunoNayrb/soulbeet) fork.
+Source: [BrunoNayrb/soulbeet](https://github.com/BrunoNayrb/soulbeet)
 
 - Paste a CSV with the columns `title,album,artist`. The first line is skipped.
+- Choose which library receives the downloads. The list is the folders you added in Soulbeet, not a fixed path.
 - Each song is searched as an album first, then as a single track if that fails.
 - Live, concert, acoustic, demo, and similar recordings are skipped.
-- Matches are queued into `/share/Media/Music/Bryan`.
-- The page lists every row. Queued rows are kept, and failed rows have a **Search album** button that opens Search with the artist and album filled in.
+- The page lists every row. Failed rows have a **Search album** button that opens Search with the artist and album filled in.
 - The list is saved and survives a refresh. **Clear history** removes it.
-- A long list no longer dies with a gateway timeout. Rows show as working, then queued or failed.
 
-The finished image is built on GitHub and published to `ghcr.io/brunonayrb/soulbeet-bulk`. Home Assistant downloads that image.
-
-## Soulbeet
-
-The original add-on runs the official Soulbeet image and adds the same local database fix. It does not include CSV import.
+The image is built on GitHub and published to `ghcr.io/brunonayrb/soulbeet-bulk`. Home Assistant downloads that image.
 
 ## Installation
 
 1. In the Home Assistant add-on store, add `https://github.com/BrunoNayrb/ha-soulbeet`.
 2. Reload the repository.
 3. Install **Soulbeet Bulk**, **Soulbeet**, or both.
-4. Start the add-on and open its web UI.
+4. On the Configuration tab, set your own folders. The defaults are empty on purpose.
 
-On the Configuration tab:
+| Option | What to enter |
+|--------|----------------|
+| `download_path` | The folder where slskd saves downloads |
+| `music_base` | The parent folder of your libraries |
+| `navidrome_url` | Your Navidrome address, or leave it empty |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `download_path` | `/share/Media/slskd/downloads` | Folder where slskd saves downloads |
-| `music_base` | `/share/Media/Music` | Parent folder of the libraries |
-| `navidrome_url` | empty | Navidrome address, if login should use Navidrome |
-
-In the Soulbeet UI, add the library folders and the slskd address and API key.
+Then start the add-on, open the web UI, and add each library folder there. Bulk import can only send music to a folder that has been added.
 
 ## Updating Soulbeet Bulk
 
-1. Push the code changes to [BrunoNayrb/soulbeet](https://github.com/BrunoNayrb/soulbeet).
+1. Push the code changes to the soulbeet fork.
 2. Raise `version` in `soulbeet-bulk/config.yaml` and commit it.
 3. Wait until the GitHub Action is green.
 4. Reload the repository in Home Assistant and press **Update**.
