@@ -1,5 +1,5 @@
 name: Soulbeet Bulk
-version: 0.1.24
+version: 0.1.25
 slug: soulbeet_bulk_v2
 description: >-
   Fork of Soulbeet that imports a CSV of songs into a library you choose.
